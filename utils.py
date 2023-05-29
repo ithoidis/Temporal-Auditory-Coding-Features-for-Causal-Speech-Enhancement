@@ -127,3 +127,37 @@ def remove_silent_frames(x, y, fs, dyn_range=30, framelen=4096, hop=1024):
         y_sil[range(i * hop, i * hop + framelen)] += y_frames[i, :]
 
     return x_sil / 2., y_sil / 2.
+
+
+
+def upsample(s_ds, factor, axis=-1):
+    """
+    upsample 1D signals by factor given.
+    Upsampling is done in seq length dimension for all filters and time steps.
+    :param s_ds: Numpy array. Input shape (time_steps, seq_length, filters)
+    :param factor: Integer. Upsampling factor fs_new / fs_ds
+    :return: signal with shape (time_steps, seq_length * factor, filters)
+    """
+    seq_length = s_ds.shape[axis]
+    filters = s_ds.shape[axis-1]
+
+    t_ds = np.array(range(seq_length))
+    t_up = np.linspace(0, seq_length, num=int(seq_length * factor))
+
+    s_up = np.zeros(
+        (filters, seq_length * factor),
+        dtype='float32')
+
+    for f in range(filters):
+        # create the interpolating function
+        current_env = s_ds[f, :]
+        f_exp = interp1d(t_ds, current_env, kind='cubic', bounds_error=False, fill_value='extrapolate')
+        current_env_up = f_exp(t_up)
+
+        for s in range(seq_length * factor):
+            s_up[f, s] = current_env_up[s]
+
+        if np.isnan(s_up).any():
+            raise ValueError('Encountered NaN in upsampled singal')
+
+    return s_up
