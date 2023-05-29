@@ -7,10 +7,10 @@ from scipy.io.wavfile import read, write
 import scipy
 import random
 import analysis as anal
-# from processing import *
 from helpers import *
 from sklearn.metrics import mean_squared_error
 import soundfile as sf
+from scipy.interpolate import interp1d
 
 def rms(y):
     """
